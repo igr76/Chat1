@@ -25,9 +25,15 @@ public class MainView extends VerticalLayout {
     private final Storage storage;
     private Registration registration;
     private Grid<Storage.ChatMessage> grid;
+    private VerticalLayout chat;
 
     public MainView(Storage storage) {
         this.storage = storage;
+        buildChat(storage);
+    }
+
+    private void buildChat(Storage storage) {
+        chat = new VerticalLayout();
 
         grid = new Grid<>();
         grid.setItems(storage.getMessages());
@@ -48,7 +54,6 @@ public class MainView extends VerticalLayout {
                     );
                 }}
         );
-
     }
 
     private static String renderRow(Storage.ChatMessage message) {
