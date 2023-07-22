@@ -26,27 +26,52 @@ public class MainView extends VerticalLayout {
     private Registration registration;
     private Grid<Storage.ChatMessage> grid;
     private VerticalLayout chat;
+    private VerticalLayout login;
+    private String user ="";
 
     public MainView(Storage storage) {
         this.storage = storage;
-        buildChat(storage);
+        buildLogin();
+        buildChat();
     }
 
-    private void buildChat(Storage storage) {
+    private void buildLogin() {
+        TextField field =  new TextField();
+        field.setPlaceholder("Please, introduse yourself");
+        login = new VerticalLayout(){{
+            add(
+                    field,
+                    new Button("Login"){{
+                        addClickListener(click -> {
+                            login.setVisible(false);
+                            chat.setVisible(true);
+                            user = field.getValue();
+                            storage.addRecordJoined(user);
+                        });
+                        addClickShortcut(Key.ENTER);
+                    }}
+            );
+        }};
+        add(login);
+    }
+
+    private void buildChat() {
         chat = new VerticalLayout();
+        add(chat);
+        chat.setVisible(false);
 
         grid = new Grid<>();
         grid.setItems(storage.getMessages());
         grid.addColumn(new ComponentRenderer<>(message -> new Html(renderRow(message))))
                 .setAutoWidth(true);
         TextField field = new TextField();
-        add(new H3("Vaadin chat"),grid,
+        chat.add(new H3("Vaadin chat"),grid,
                 new HorizontalLayout(){{
                     add(field,
                             new Button("Send message") {{
                                 addClickListener(
                                         click -> {
-                                            storage.addRecord("", field.getValue());
+                                            storage.addRecord(user, field.getValue());
                                             field.clear();
                                         });
                                 addClickShortcut(Key.ENTER);
@@ -58,9 +83,14 @@ public class MainView extends VerticalLayout {
 
     private static String renderRow(Storage.ChatMessage message) {
         Parser parser = Parser.builder().build();
-        Node document = parser.parse(String.format("**%s**: %s",message.getName(),message.getMessage()));
+        Node document = parser.parse(String.format("**%s**: %s", message.getName(), message.getMessage()));
         HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
-        return htmlRenderer.render(document);
+        if (message.getName().isEmpty()) {
+            return htmlRenderer.render(parser.parse(String.format("_User **%s** is joined the chat!",  message.getMessage())));
+        }else {
+
+            return htmlRenderer.render(document);
+        }
     }
 
     public void onMessage(Storage.ChatEvent event) {
